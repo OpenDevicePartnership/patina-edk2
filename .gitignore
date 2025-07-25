@@ -7,3 +7,5 @@ BuildConfig.conf
 /Conf/
 settings.json
 *venv*
+
+/edk2/
