@@ -1,0 +1,13 @@
+# @file .markdownlint.yml
+#
+# markdownlint configuration file
+#
+##
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+    "default": true,
+    "MD013": {"line_length": 120, "code_blocks": false, "tables": false},
+    "MD033": {"allowed_elements": ["br"]}
+}

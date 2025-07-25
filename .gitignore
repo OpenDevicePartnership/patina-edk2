@@ -1,0 +1,9 @@
+/Build/
+*_extdep/
+*.pyc
+__pycache__/
+*.bak
+BuildConfig.conf
+/Conf/
+settings.json
+*venv*

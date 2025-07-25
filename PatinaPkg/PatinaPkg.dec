@@ -1,0 +1,26 @@
+## @file
+# Build declaration file for PatinaPkg
+#
+# This package contains definitions for content specific to Patina that may be needed
+# by EDK II style C code to interact with Patina firmware.
+#
+# Copyright (C) Microsoft Corporation.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  DEC_SPECIFICATION = 0x00010017
+  PACKAGE_NAME      = PatinaPkg
+  PACKAGE_VERSION   = 0.1
+  PACKAGE_GUID      = 551B93C1-8921-4828-AAC9-6B9B7551D750
+
+[Includes]
+  Include
+
+[Guids]
+  ## Tokenspace GUID for Patina Package PCDs
+  #  {bb2837f4-1fc0-430f-a706-cca4965f70d6}
+  #
+  gPatinaPkgTokenSpaceGuid = {0xbb2837f4, 0x1fc0, 0x430f, {0xa7, 0x06, 0xcc, 0xa4, 0x96, 0x5f, 0x70, 0xd6}}
