@@ -2,7 +2,7 @@
 # Patina Package CI Build Settings
 #
 # Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: BSD-2-Clause-Patent
+# SPDX-License-Identifier: Apache-2.0
 ##
 import glob
 import os
