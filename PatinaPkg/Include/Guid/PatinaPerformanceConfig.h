@@ -18,7 +18,7 @@
         component. For example, the platform may choose to populate the HOB values based on a build flag, a PCD, or
         other mechanism for the given platform build/boot.
 
-  Copyright (c) Microsoft Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
 
   SPDX-License-Identifier: Apache-2.0
 
@@ -38,6 +38,11 @@ typedef struct {
   BOOLEAN    Enabled;
   ///
   /// A mask for selecting measurements enabled in the Patina Performance component.
+  ///
+  /// See the Patina Performance Component for the most recent configuration details
+  /// including measurement bit definitions:
+  ///
+  /// https://github.com/OpenDevicePartnership/patina/tree/main/components/patina_performance
   ///
   UINT32     EnabledMeasurements;
 } PATINA_PERFORMANCE_CONFIG_HOB;
