@@ -1,0 +1,73 @@
+## @file
+#  MP driver installs MP protocol.
+#
+#  MP Dxe is a fork of CpuDxe that focusing only on the non-BSP AP initialization. This is required for Patina as
+#  Patina will implement the CPU initialization for the BSP, including interrupts, GDT, MTRR, and paging. This driver
+#  is intended to be use in place of CpuDxe for platforms that require the gEfiMpServiceProtocolGuid protocol. For
+#  history of the copied code, see the CpuDxe implementation.
+#
+#  Reference: https://github.com/tianocore/edk2/tree/master/UefiCpuPkg/CpuDxe
+#
+#  Copyright (c) 2008 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
+#  Copyright (c) 2024, Loongson Technology Corporation Limited. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = MpDxe
+  MODULE_UNI_FILE                = MpDxe.uni
+  FILE_GUID                      = 94598893-936a-481e-998e-1b0880916ae4
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = InitializeMp
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+  PatinaPkg/PatinaPkg.dec
+
+[LibraryClasses.common]
+  BaseLib
+  BaseMemoryLib
+  CpuExceptionHandlerLib
+  CpuLib
+  DebugLib
+  DxeServicesTableLib
+  HobLib
+  MemoryAllocationLib
+  MpInitLib
+  PeCoffGetEntryPointLib
+  ReportStatusCodeLib
+  TimerLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[LibraryClasses.X64]
+  LocalApicLib
+  MtrrLib
+
+[Sources.X64]
+  MpDxe.c
+  MpDxe.h
+
+[Protocols]
+  gEfiMpServiceProtocolGuid                     ## PRODUCES
+
+[Guids]
+  gCacheAttributesChangeEventGuid               ## CONSUMES
+
+[Ppis]
+  gEfiSecPlatformInformation2PpiGuid            ## UNDEFINED # HOB
+  gEfiSecPlatformInformationPpiGuid             ## UNDEFINED # HOB
+
+[Depex]
+  gEfiCpuArchProtocolGuid
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  MpDxeExtra.uni

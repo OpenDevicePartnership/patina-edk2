@@ -15,6 +15,7 @@
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
+            "UefiCpuPkg/UefiCpuPkg.dec",
             "PatinaPkg/PatinaPkg.dec",
         ],
     },
