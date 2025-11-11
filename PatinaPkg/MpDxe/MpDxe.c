@@ -702,6 +702,14 @@ InitializeMpExceptionStackSwitchHandlers (
   UINTN                           BufferSize;
   EFI_STATUS                      Status;
   UINT8                           *Buffer;
+  UINTN                           BspNumber;
+
+  Status = MpInitLibWhoAmI (&BspNumber);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get BSP processor number.\n", __func__));
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
 
   SwitchStackData = AllocateZeroPool (mNumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT));
   if (SwitchStackData == NULL) {
@@ -717,6 +725,13 @@ InitializeMpExceptionStackSwitchHandlers (
     //
     SwitchStackData[Index].Status = EFI_NOT_STARTED;
   }
+
+  //
+  // Set the BSP status to success so that it will not take any action. This is because the core will maintain
+  // control over the IDT/GDT/Stack for the BSP.
+  //
+
+  SwitchStackData[BspNumber].Status = EFI_SUCCESS;
 
   Status = MpInitLibStartupAllCPUs (
              InitializeExceptionStackSwitchHandlers,
