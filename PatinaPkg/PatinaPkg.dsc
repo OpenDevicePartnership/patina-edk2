@@ -22,7 +22,7 @@
   PatinaPkg/MpDxe/MpDxe.inf
 
 [Components]
-  PatinaPkg/AcpiTableDxe/AcpiTableDxe.inf
+  PatinaPkg/AcpiSdtDxe/AcpiSdtDxe.inf
 
 [LibraryClasses]
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf

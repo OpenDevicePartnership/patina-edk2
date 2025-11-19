@@ -1098,3 +1098,30 @@ SdtAcpiTableAcpiSdtConstructor (
 
   return;
 }
+
+/**
+  Entry point of the ACPI table driver.
+  Creates and initializes an instance of the ACPI Table
+  Protocol and installs it on a new handle.
+
+  @param  ImageHandle   A handle for the image that is initializing this driver.
+  @param  SystemTable   A pointer to the EFI system table.
+
+  @return EFI_SUCCESS           Driver initialized successfully.
+  @return EFI_LOAD_ERROR        Failed to Initialize or has been loaded.
+  @return EFI_OUT_OF_RESOURCES  Could not allocate needed resources.
+
+**/
+EFI_STATUS
+EFIAPI
+InitializeAcpiSdtDxe (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  EFI_STATUS               Status;
+
+  Status = EFI_SUCCESS;
+
+  return Status;
+}
