@@ -869,24 +869,6 @@ FindPath (
 }
 
 /**
-  This function initializes AcpiSdt protocol in ACPI table instance.
-  SHERRY: This might need to do more stuff
-
-  @param[in]  AcpiTableInstance       Instance to construct
-**/
-VOID
-SdtAcpiTableAcpiSdtConstructor (
-  IN EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance
-  )
-{
-  InitializeListHead (&AcpiTableInstance->NotifyList);
-  CopyMem (&AcpiTableInstance->AcpiSdtProtocol, &mAcpiSdtProtocolTemplate, sizeof (mAcpiSdtProtocolTemplate));
-  AcpiTableInstance->AcpiSdtProtocol.AcpiVersion = (EFI_ACPI_TABLE_VERSION)PcdGet32 (PcdAcpiExposedTableVersions);
-
-  return;
-}
-
-/**
   Entry point of the ACPI table driver.
   Creates and initializes an instance of the ACPI Table
   Protocol and installs it on a new handle.
@@ -916,6 +898,8 @@ InitializeAcpiSdtDxe (
   if (EFI_ERROR (Status) || (mAcpiGetProtocol == NULL)) {
     return EFI_LOAD_ERROR;
   }
+
+  mAcpiSdtProtocolTemplate.AcpiVersion = (EFI_ACPI_TABLE_VERSION)PcdGet32 (PcdAcpiExposedTableVersions);
 
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mHandle,

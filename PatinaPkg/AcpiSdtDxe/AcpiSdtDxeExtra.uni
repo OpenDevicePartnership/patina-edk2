@@ -9,6 +9,4 @@
 
 #string STR_PROPERTIES_MODULE_NAME
 #language en-US
-"ACPI Table DXE Driver"
-
-
+"ACPI SDT DXE Driver"

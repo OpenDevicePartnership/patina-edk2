@@ -8,7 +8,6 @@
 // **/
 
 
-#string STR_MODULE_ABSTRACT             #language en-US "ACPI Table Protocol Driver"
+#string STR_MODULE_ABSTRACT             #language en-US "ACPI SDT Protocol Driver"
 
-#string STR_MODULE_DESCRIPTION          #language en-US "This driver initializes ACPI tables (Rsdp, Rsdt and Xsdt) and produces UEFI/PI services to install/uninstall/manage ACPI tables."
-
+#string STR_MODULE_DESCRIPTION          #language en-US "This driver initializes and produces the ACPI SDT protocol."

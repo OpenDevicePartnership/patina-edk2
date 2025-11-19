@@ -53,31 +53,15 @@
   PcdLib
   HobLib
 
-[Guids]
-  gEfiAcpi10TableGuid                           ## PRODUCES           ## SystemTable
-  gEfiAcpiTableGuid                             ## PRODUCES           ## SystemTable
-  gUniversalPayloadAcpiTableGuid                ## SOMETIMES_CONSUMES ## HOB
-  gAcpiTableHobGuid                             ## SOMETIMES_CONSUMES ## HOB
-
-[FeaturePcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdInstallAcpiSdtProtocol  ## CONSUMES
-
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId            ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId       ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision      ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId        ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiExposedTableVersions    ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdNoACPIReclaimMemory         ## CONSUMES
 
 [Protocols]
-  gEfiAcpiTableProtocolGuid                     ## PRODUCES
   gEfiAcpiSdtProtocolGuid                       ## PRODUCES
   gAcpiGetProtocolGuid                          ## CONSUMES
 
 [Depex]
-  TRUE
+  gAcpiGetProtocolGuid
 
 [UserExtensions.TianoCore."ExtraFiles"]
   AcpiTableDxeExtra.uni

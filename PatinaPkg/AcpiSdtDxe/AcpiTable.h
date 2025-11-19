@@ -81,16 +81,6 @@ AcpiPlatformChecksum (
   IN UINTN  ChecksumOffset
   );
 
-/**
-  This function initializes AcpiSdt protocol in ACPI table instance.
-
-  @param[in]  AcpiTableInstance       Instance to construct
-**/
-VOID
-SdtAcpiTableAcpiSdtConstructor (
-  IN EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance
-  );
-
 extern EFI_HANDLE  mHandle;
 
 #endif
