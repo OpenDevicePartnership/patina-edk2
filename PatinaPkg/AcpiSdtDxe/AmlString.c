@@ -324,7 +324,7 @@ AmlGetAslNameStringSize (
   }
 
   //
-  // Check SegCoount
+  // Check SegCount
   //
   if (*SegCount > 0xFF) {
     return 0;

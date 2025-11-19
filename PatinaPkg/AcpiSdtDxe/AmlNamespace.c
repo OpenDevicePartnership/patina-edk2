@@ -65,7 +65,7 @@ AmlCreateNode (
   @param[in]    AmlParentNodeList    AML parent node list.
   @param[in]    Create               TRUE means to create node if not found.
 
-  @return       AmlChildNode whoes name is same as NameSeg.
+  @return       AmlChildNode whose name is same as NameSeg.
 **/
 EFI_AML_NODE_LIST *
 AmlFindNodeInThis (
@@ -121,7 +121,7 @@ AmlFindNodeInThis (
   @param[in]    AmlParentNodeList    AML parent node list.
   @param[in]    Create               TRUE means to create node if not found.
 
-  @return       AmlChildNode whoes name is same as NameSeg.
+  @return       AmlChildNode whose name is same as NameSeg.
 **/
 EFI_AML_NODE_LIST *
 AmlFindNodeInTheTree (
@@ -210,7 +210,7 @@ AmlFindNodeInTheTree (
   @param[in]    AmlRootNodeList      AML root node list.
   @param[in]    AmlParentNodeList    AML parent node list.
 
-  @return       AmlChildNode whoes name is NameString.
+  @return       AmlChildNode whose name is NameString.
 **/
 EFI_AML_NODE_LIST *
 AmlInsertNodeToTree (

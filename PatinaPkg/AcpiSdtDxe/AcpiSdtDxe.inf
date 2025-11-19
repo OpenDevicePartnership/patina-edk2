@@ -27,9 +27,8 @@
 #
 
 [Sources]
-  AcpiTableProtocol.c
+  AcpiTableChecksum.c
   AcpiTable.h
-  AcpiTable.c
   AcpiSdt.h
   AcpiSdt.c
   Aml.c
