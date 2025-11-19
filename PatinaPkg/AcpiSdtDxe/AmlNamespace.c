@@ -6,7 +6,7 @@
 
 **/
 
-#include "AcpiTable.h"
+#include "AcpiSdt.h"
 
 /**
   Construct node list according to the AML handle.

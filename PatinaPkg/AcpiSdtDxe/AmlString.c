@@ -6,7 +6,7 @@
 
 **/
 
-#include "AcpiTable.h"
+#include "AcpiSdt.h"
 
 /**
   Check if it is AML Root name

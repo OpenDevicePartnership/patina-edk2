@@ -6,7 +6,7 @@
 
 **/
 
-#include "AcpiTable.h"
+#include "AcpiSdt.h"
 
 GLOBAL_REMOVE_IF_UNREFERENCED
 AML_BYTE_ENCODING  mAmlByteEncoding[] = {

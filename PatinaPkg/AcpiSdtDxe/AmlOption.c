@@ -6,7 +6,7 @@
 
 **/
 
-#include "AcpiTable.h"
+#include "AcpiSdt.h"
 
 /**
   Retrieve option term according to AmlByteEncoding and Buffer.

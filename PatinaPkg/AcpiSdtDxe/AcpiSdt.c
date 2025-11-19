@@ -9,7 +9,13 @@
 //
 // Includes
 //
-#include "AcpiTable.h"
+
+#include "AcpiSdt.h"
+
+//
+// Statements that include other files
+//
+#include <IndustryStandard/Acpi.h>
 
 //
 // Handle to install ACPI SDT Protocol
@@ -31,6 +37,53 @@ EFI_ACPI_SDT_PROTOCOL  mAcpiSdtProtocolTemplate = {
   SetOption,
   FindPath
 };
+
+/**
+  This function calculates and updates an UINT8 checksum.
+
+  @param  Buffer          Pointer to buffer to checksum
+  @param  Size            Number of bytes to checksum
+  @param  ChecksumOffset  Offset to place the checksum result in
+
+  @return EFI_SUCCESS             The function completed successfully.
+
+**/
+EFI_STATUS
+AcpiPlatformChecksum (
+  IN VOID   *Buffer,
+  IN UINTN  Size,
+  IN UINTN  ChecksumOffset
+  )
+{
+  UINT8  Sum;
+  UINT8  *Ptr;
+
+  Sum = 0;
+  //
+  // Initialize pointer
+  //
+  Ptr = Buffer;
+
+  //
+  // set checksum to 0 first
+  //
+  Ptr[ChecksumOffset] = 0;
+
+  //
+  // add all content of buffer
+  //
+  while ((Size--) != 0) {
+    Sum = (UINT8)(Sum + (*Ptr++));
+  }
+
+  //
+  // set checksum
+  //
+  Ptr                 = Buffer;
+  Ptr[ChecksumOffset] = (UINT8)(0xff - Sum + 1);
+
+  return EFI_SUCCESS;
+}
 
 /**
   This function finds the table specified by the buffer.
