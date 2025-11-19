@@ -12,6 +12,7 @@
 #include <PiDxe.h>
 
 #include <Protocol/AcpiTable.h>
+#include <Protocol/AcpiGet.h>
 #include <Guid/Acpi.h>
 #include <Protocol/AcpiSystemDescriptionTable.h>
 

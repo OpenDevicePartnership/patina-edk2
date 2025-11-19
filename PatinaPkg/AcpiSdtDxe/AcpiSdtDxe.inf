@@ -41,6 +41,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  PatinaPkg/PatinaPkg.dec
 
 [LibraryClasses]
   UefiBootServicesTableLib
@@ -74,6 +75,7 @@
 [Protocols]
   gEfiAcpiTableProtocolGuid                     ## PRODUCES
   gEfiAcpiSdtProtocolGuid                       ## PRODUCES
+  gAcpiGetProtocolGuid                          ## CONSUMES
 
 [Depex]
   TRUE
