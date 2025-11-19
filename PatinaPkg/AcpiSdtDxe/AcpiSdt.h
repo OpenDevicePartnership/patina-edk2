@@ -9,6 +9,24 @@
 #ifndef _ACPI_SDT_H_
 #define _ACPI_SDT_H_
 
+#include <PiDxe.h>
+
+#include <Protocol/AcpiTable.h>
+#include <Protocol/AcpiGet.h>
+#include <Guid/Acpi.h>
+#include <Protocol/AcpiSystemDescriptionTable.h>
+
+#include <Library/BaseLib.h>
+#include <Library/DebugLib.h>
+#include <Library/UefiLib.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/UefiDriverEntryPoint.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/PcdLib.h>
+#include <Library/HobLib.h>
+#include <UniversalPayload/AcpiTable.h>
+
 //
 // Privacy data structure
 //

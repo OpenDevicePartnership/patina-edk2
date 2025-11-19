@@ -9,7 +9,20 @@
 //
 // Includes
 //
-#include "AcpiTable.h"
+
+#include "AcpiSdt.h"
+
+//
+// Statements that include other files
+//
+#include <IndustryStandard/Acpi.h>
+
+//
+// Handle to install ACPI SDT Protocol
+//
+EFI_HANDLE  mHandle = NULL;
+GLOBAL_REMOVE_IF_UNREFERENCED
+ACPI_GET_PROTOCOL  *mAcpiGetProtocol = NULL;
 
 GLOBAL_REMOVE_IF_UNREFERENCED
 EFI_ACPI_SDT_PROTOCOL  mAcpiSdtProtocolTemplate = {
@@ -26,61 +39,90 @@ EFI_ACPI_SDT_PROTOCOL  mAcpiSdtProtocolTemplate = {
 };
 
 /**
-  This function returns ACPI Table instance.
+  This function calculates and updates an UINT8 checksum.
 
-  @return AcpiTableInstance
+  @param  Buffer          Pointer to buffer to checksum
+  @param  Size            Number of bytes to checksum
+  @param  ChecksumOffset  Offset to place the checksum result in
+
+  @return EFI_SUCCESS             The function completed successfully.
+
 **/
-EFI_ACPI_TABLE_INSTANCE *
-SdtGetAcpiTableInstance (
-  VOID
+EFI_STATUS
+AcpiPlatformChecksum (
+  IN VOID   *Buffer,
+  IN UINTN  Size,
+  IN UINTN  ChecksumOffset
   )
 {
-  return mPrivateData;
+  UINT8  Sum;
+  UINT8  *Ptr;
+
+  Sum = 0;
+  //
+  // Initialize pointer
+  //
+  Ptr = Buffer;
+
+  //
+  // set checksum to 0 first
+  //
+  Ptr[ChecksumOffset] = 0;
+
+  //
+  // add all content of buffer
+  //
+  while ((Size--) != 0) {
+    Sum = (UINT8)(Sum + (*Ptr++));
+  }
+
+  //
+  // set checksum
+  //
+  Ptr                 = Buffer;
+  Ptr[ChecksumOffset] = (UINT8)(0xff - Sum + 1);
+
+  return EFI_SUCCESS;
 }
 
 /**
   This function finds the table specified by the buffer.
 
   @param[in]  Buffer      Table buffer to find.
+  @param[out] OutTable    On return, holds the table corresponding to the buffer.
 
-  @return ACPI table list.
+  @retval EFI_SUCCESS     The table containing the AML buffer is found.
+
 **/
-EFI_ACPI_TABLE_LIST *
+EFI_STATUS
 FindTableByBuffer (
-  IN VOID  *Buffer
+  IN  VOID                 *Buffer,
+  OUT EFI_ACPI_SDT_HEADER  **OutTable
   )
 {
-  EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance;
-  LIST_ENTRY               *CurrentLink;
-  EFI_ACPI_TABLE_LIST      *CurrentTableList;
-  LIST_ENTRY               *StartLink;
+  UINTN  Index = 0;
 
-  //
-  // Get the instance of the ACPI Table
-  //
-  AcpiTableInstance = SdtGetAcpiTableInstance ();
+  EFI_ACPI_SDT_HEADER     *Table  = NULL;
+  EFI_ACPI_TABLE_VERSION  Version = 0;
+  UINTN                   Key     = 0;
+  EFI_STATUS              Status;
 
-  //
-  // Find the notify
-  //
-  StartLink   = &AcpiTableInstance->TableList;
-  CurrentLink = StartLink->ForwardLink;
-
-  while (CurrentLink != StartLink) {
-    CurrentTableList = EFI_ACPI_TABLE_LIST_FROM_LINK (CurrentLink);
-    if (((UINTN)CurrentTableList->Table <= (UINTN)Buffer) &&
-        ((UINTN)CurrentTableList->Table + CurrentTableList->TableSize > (UINTN)Buffer))
-    {
-      //
-      // Good! Found Table.
-      //
-      return CurrentTableList;
+  for ( ; ;) {
+    Status = mAcpiGetProtocol->GetAcpiTable (Index, &Table, &Version, &Key);
+    if (EFI_ERROR (Status)) {
+      return Status;
     }
 
-    CurrentLink = CurrentLink->ForwardLink;
-  }
+    // Check if the buffer is contained within the memory space of this table.
+    if (((UINTN)Table <= ((UINTN)Buffer)) &&
+        ((UINTN)Buffer < ((UINTN)Table + Table->Length)))
+    {
+      *OutTable = Table;
+      return EFI_SUCCESS;
+    }
 
-  return NULL;
+    Index++;
+  }
 }
 
 /**
@@ -97,168 +139,57 @@ SdtUpdateAmlChecksum (
   IN VOID  *Buffer
   )
 {
-  EFI_ACPI_TABLE_LIST  *CurrentTableList;
+  EFI_STATUS           Status;
+  EFI_ACPI_SDT_HEADER  *Table = NULL;
 
-  CurrentTableList = FindTableByBuffer (Buffer);
-  if (CurrentTableList == NULL) {
-    return EFI_NOT_FOUND;
+  Status = FindTableByBuffer (Buffer, &Table);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "FindTableByBuffer failed: %r\n",
+      Status
+      ));
+    return Status;
   }
 
   AcpiPlatformChecksum (
-    (VOID *)CurrentTableList->Table,
-    CurrentTableList->Table->Length,
-    OFFSET_OF (EFI_ACPI_DESCRIPTION_HEADER, Checksum)
+    (VOID *)Table,
+    Table->Length,
+    OFFSET_OF (EFI_ACPI_SDT_HEADER, Checksum)
     );
   return EFI_SUCCESS;
 }
 
 /**
-  This function finds MAX AML buffer size.
-  It will search the ACPI table installed by ACPI_TABLE protocol.
+  Computes the remaining bytes from buffer to the end of the table.
 
-  @param[in]  Buffer        A piece of AML code buffer pointer.
-  @param[out] MaxSize       On return it holds the MAX size of buffer.
+  @param[in]  Buffer        A pointer to an AML buffer.
+  @param[out] MaxSize       On return it holds the buffer size (from start of buffer to end of containing table).
 
-  @retval EFI_SUCCESS       The table holds the AML buffer is found, and MAX size if returned.
-  @retval EFI_NOT_FOUND     The table holds the AML buffer is not found.
+  @retval EFI_SUCCESS       The table containing the AML buffer is found, and the buffer size is returned.
 **/
 EFI_STATUS
-SdtGetMaxAmlBufferSize (
+SdtGetRemainingAmlBufferSize (
   IN  VOID   *Buffer,
   OUT UINTN  *MaxSize
   )
 {
-  EFI_ACPI_TABLE_LIST  *CurrentTableList;
+  EFI_STATUS           Status;
+  EFI_ACPI_SDT_HEADER  *Table = NULL;
 
-  CurrentTableList = FindTableByBuffer (Buffer);
-  if (CurrentTableList == NULL) {
-    return EFI_NOT_FOUND;
+  Status = FindTableByBuffer (Buffer, &Table);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "FindTableByBuffer failed: %r\n",
+      Status
+      ));
+    return Status;
   }
 
-  *MaxSize = (UINTN)CurrentTableList->Table + CurrentTableList->Table->Length - (UINTN)Buffer;
-  return EFI_SUCCESS;
-}
-
-/**
-  This function invokes ACPI notification.
-
-  @param[in]  AcpiTableInstance          Instance to AcpiTable
-  @param[in]  Version                    Version(s) to set.
-  @param[in]  Handle                     Handle of the table.
-**/
-VOID
-SdtNotifyAcpiList (
-  IN EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance,
-  IN EFI_ACPI_TABLE_VERSION   Version,
-  IN UINTN                    Handle
-  )
-{
-  EFI_ACPI_NOTIFY_LIST  *CurrentNotifyList;
-  LIST_ENTRY            *CurrentLink;
-  LIST_ENTRY            *StartLink;
-  EFI_ACPI_TABLE_LIST   *Table;
-  EFI_STATUS            Status;
-
-  //
-  // We should not use Table buffer, because it is user input buffer.
-  //
-  Status = FindTableByHandle (
-             Handle,
-             &AcpiTableInstance->TableList,
-             &Table
-             );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Find the notify
-  //
-  StartLink   = &AcpiTableInstance->NotifyList;
-  CurrentLink = StartLink->ForwardLink;
-
-  while (CurrentLink != StartLink) {
-    CurrentNotifyList = EFI_ACPI_NOTIFY_LIST_FROM_LINK (CurrentLink);
-
-    //
-    // Inovke notification
-    //
-    CurrentNotifyList->Notification ((EFI_ACPI_SDT_HEADER *)Table->Table, Version, Handle);
-
-    CurrentLink = CurrentLink->ForwardLink;
-  }
-
-  return;
-}
-
-/**
-  Returns a requested ACPI table.
-
-  The following structures are not considered elements in the list of
-  ACPI tables:
-  - Root System Description Pointer (RSD_PTR)
-  - Root System Description Table (RSDT)
-  - Extended System Description Table (XSDT)
-  Version is updated with a bit map containing all the versions of ACPI of which the table is a
-  member. For tables installed via the EFI_ACPI_TABLE_PROTOCOL.InstallAcpiTable() interface,
-  the function returns the value of EFI_ACPI_STD_PROTOCOL.AcpiVersion.
-
-  @param[in]    AcpiTableInstance  ACPI table Instance.
-  @param[in]    Index              The zero-based index of the table to retrieve.
-  @param[out]   Table              Pointer for returning the table buffer.
-  @param[out]   Version            On return, updated with the ACPI versions to which this table belongs. Type
-                                   EFI_ACPI_TABLE_VERSION is defined in "Related Definitions" in the
-                                   EFI_ACPI_SDT_PROTOCOL.
-  @param[out]   TableKey           On return, points to the table key for the specified ACPI system definition table.
-                                   This is identical to the table key used in the EFI_ACPI_TABLE_PROTOCOL.
-                                   The TableKey can be passed to EFI_ACPI_TABLE_PROTOCOL.UninstallAcpiTable()
-                                   to uninstall the table.
-  @retval EFI_SUCCESS              The function completed successfully.
-  @retval EFI_NOT_FOUND            The requested index is too large and a table was not found.
-**/
-EFI_STATUS
-SdtGetAcpiTable (
-  IN  EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance,
-  IN  UINTN                    Index,
-  OUT EFI_ACPI_SDT_HEADER      **Table,
-  OUT EFI_ACPI_TABLE_VERSION   *Version,
-  OUT UINTN                    *TableKey
-  )
-{
-  UINTN                TableIndex;
-  LIST_ENTRY           *CurrentLink;
-  LIST_ENTRY           *StartLink;
-  EFI_ACPI_TABLE_LIST  *CurrentTable;
-
-  //
-  // Find the table
-  //
-  StartLink   = &AcpiTableInstance->TableList;
-  CurrentLink = StartLink->ForwardLink;
-  TableIndex  = 0;
-
-  while (CurrentLink != StartLink) {
-    if (TableIndex == Index) {
-      break;
-    }
-
-    //
-    // Next one
-    //
-    CurrentLink = CurrentLink->ForwardLink;
-    TableIndex++;
-  }
-
-  if ((TableIndex != Index) || (CurrentLink == StartLink)) {
-    return EFI_NOT_FOUND;
-  }
-
-  //
-  // Get handle and version
-  //
-  CurrentTable = EFI_ACPI_TABLE_LIST_FROM_LINK (CurrentLink);
-  *TableKey    = CurrentTable->Handle;
-  *Version     = CurrentTable->Version;
-  *Table       = (EFI_ACPI_SDT_HEADER *)CurrentTable->Table;
-
+  *MaxSize = (UINTN)Table + Table->Length - (UINTN)Buffer;
   return EFI_SUCCESS;
 }
 
@@ -296,111 +227,12 @@ GetAcpiTable2 (
   OUT UINTN                   *TableKey
   )
 {
-  EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance;
-
-  ASSERT (Table != NULL);
-  ASSERT (Version != NULL);
-  ASSERT (TableKey != NULL);
-
-  //
-  // Get the instance of the ACPI Table
-  //
-  AcpiTableInstance = SdtGetAcpiTableInstance ();
-
-  return SdtGetAcpiTable (AcpiTableInstance, Index, Table, Version, TableKey);
-}
-
-/**
-  Register a callback when an ACPI table is installed.
-
-  This function registers a function which will be called whenever a new ACPI table is installed.
-
-  @param[in]  Notification               Points to the callback function to be registered
-**/
-VOID
-SdtRegisterNotify (
-  IN EFI_ACPI_NOTIFICATION_FN  Notification
-  )
-{
-  EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance;
-  EFI_ACPI_NOTIFY_LIST     *CurrentNotifyList;
-
-  //
-  // Get the instance of the ACPI Table
-  //
-  AcpiTableInstance = SdtGetAcpiTableInstance ();
-
-  //
-  // Create a new list entry
-  //
-  CurrentNotifyList = AllocatePool (sizeof (EFI_ACPI_NOTIFY_LIST));
-  ASSERT (CurrentNotifyList != NULL);
-
-  //
-  // Initialize the table contents
-  //
-  CurrentNotifyList->Signature    = EFI_ACPI_NOTIFY_LIST_SIGNATURE;
-  CurrentNotifyList->Notification = Notification;
-
-  //
-  // Add the table to the current list of tables
-  //
-  InsertTailList (&AcpiTableInstance->NotifyList, &CurrentNotifyList->Link);
-
-  return;
-}
-
-/**
-  Unregister a callback when an ACPI table is installed.
-
-  This function unregisters a function which will be called whenever a new ACPI table is installed.
-
-  @param[in]  Notification               Points to the callback function to be unregistered.
-
-  @retval EFI_SUCCESS           Callback successfully unregistered.
-  @retval EFI_INVALID_PARAMETER Notification does not match a known registration function.
-**/
-EFI_STATUS
-SdtUnregisterNotify (
-  IN EFI_ACPI_NOTIFICATION_FN  Notification
-  )
-{
-  EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance;
-  EFI_ACPI_NOTIFY_LIST     *CurrentNotifyList;
-  LIST_ENTRY               *CurrentLink;
-  LIST_ENTRY               *StartLink;
-
-  //
-  // Get the instance of the ACPI Table
-  //
-  AcpiTableInstance = SdtGetAcpiTableInstance ();
-
-  //
-  // Find the notify
-  //
-  StartLink   = &AcpiTableInstance->NotifyList;
-  CurrentLink = StartLink->ForwardLink;
-
-  while (CurrentLink != StartLink) {
-    CurrentNotifyList = EFI_ACPI_NOTIFY_LIST_FROM_LINK (CurrentLink);
-    if (CurrentNotifyList->Notification == Notification) {
-      //
-      // Good! Found notification.
-      //
-      // Remove it from list and free the node.
-      //
-      RemoveEntryList (&(CurrentNotifyList->Link));
-      FreePool (CurrentNotifyList);
-      return EFI_SUCCESS;
-    }
-
-    CurrentLink = CurrentLink->ForwardLink;
-  }
-
-  //
-  // Not found!
-  //
-  return EFI_INVALID_PARAMETER;
+  return mAcpiGetProtocol->GetAcpiTable (
+                             Index,
+                             Table,
+                             Version,
+                             TableKey
+                             );
 }
 
 /**
@@ -424,24 +256,44 @@ RegisterNotify (
   IN EFI_ACPI_NOTIFICATION_FN  Notification
   )
 {
-  //
-  // Check for invalid input parameters
-  //
-  if (Notification == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
+  return mAcpiGetProtocol->RegisterNotify (
+                             Register,
+                             Notification
+                             );
+}
 
-  if (Register) {
-    //
-    // Register a new notify
-    //
-    SdtRegisterNotify (Notification);
-    return EFI_SUCCESS;
-  } else {
-    //
-    // Unregister an old notify
-    //
-    return SdtUnregisterNotify (Notification);
+/**
+  Locate an ACPI table by key.
+
+  @param[in]    TableKey    The table key for the ACPI table. This is the same key returned from InstallAcpiTable().
+  @param[out]   OutTable    On return, points to the table corresponding to the key.
+
+  @retval EFI_SUCCESS       Table successfully located.
+**/
+EFI_STATUS
+FindAcpiTableByKey (
+  IN  UINTN                TargetKey,
+  OUT EFI_ACPI_SDT_HEADER  **OutTable
+  )
+{
+  UINTN                   Index   = 0;
+  EFI_ACPI_SDT_HEADER     *Table  = NULL;
+  EFI_ACPI_TABLE_VERSION  Version = 0;
+  UINTN                   Key     = 0;
+  EFI_STATUS              Status;
+
+  for ( ; ;) {
+    Status = GetAcpiTable2 (Index, &Table, &Version, &Key);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    if (Key == TargetKey) {
+      *OutTable = Table;
+      return EFI_SUCCESS;
+    }
+
+    Index++;
   }
 }
 
@@ -460,24 +312,14 @@ SdtOpenSdtTable (
   OUT   EFI_ACPI_HANDLE  *Handle
   )
 {
-  EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance;
-  EFI_STATUS               Status;
-  EFI_ACPI_TABLE_LIST      *Table;
-  EFI_AML_HANDLE           *AmlHandle;
-
-  //
-  // Get the instance of the ACPI Table
-  //
-  AcpiTableInstance = SdtGetAcpiTableInstance ();
+  EFI_STATUS           Status;
+  EFI_ACPI_SDT_HEADER  *Table;
+  EFI_AML_HANDLE       *AmlHandle;
 
   //
   // Find the table
   //
-  Status = FindTableByHandle (
-             TableKey,
-             &AcpiTableInstance->TableList,
-             &Table
-             );
+  Status = FindAcpiTableByKey (TableKey, &Table);
   if (EFI_ERROR (Status)) {
     return EFI_NOT_FOUND;
   }
@@ -485,8 +327,8 @@ SdtOpenSdtTable (
   AmlHandle = AllocatePool (sizeof (*AmlHandle));
   ASSERT (AmlHandle != NULL);
   AmlHandle->Signature       = EFI_AML_ROOT_HANDLE_SIGNATURE;
-  AmlHandle->Buffer          = (VOID *)((UINTN)Table->Table + sizeof (EFI_ACPI_SDT_HEADER));
-  AmlHandle->Size            = Table->Table->Length - sizeof (EFI_ACPI_SDT_HEADER);
+  AmlHandle->Buffer          = (VOID *)((UINTN)Table + sizeof (EFI_ACPI_SDT_HEADER));
+  AmlHandle->Size            = Table->Length - sizeof (EFI_ACPI_SDT_HEADER);
   AmlHandle->AmlByteEncoding = NULL;
   AmlHandle->Modified        = FALSE;
 
@@ -607,7 +449,7 @@ Open (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = SdtGetMaxAmlBufferSize (Buffer, &MaxSize);
+  Status = SdtGetRemainingAmlBufferSize (Buffer, &MaxSize);
   if (EFI_ERROR (Status)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1083,23 +925,6 @@ FindPath (
 }
 
 /**
-  This function initializes AcpiSdt protocol in ACPI table instance.
-
-  @param[in]  AcpiTableInstance       Instance to construct
-**/
-VOID
-SdtAcpiTableAcpiSdtConstructor (
-  IN EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance
-  )
-{
-  InitializeListHead (&AcpiTableInstance->NotifyList);
-  CopyMem (&AcpiTableInstance->AcpiSdtProtocol, &mAcpiSdtProtocolTemplate, sizeof (mAcpiSdtProtocolTemplate));
-  AcpiTableInstance->AcpiSdtProtocol.AcpiVersion = (EFI_ACPI_TABLE_VERSION)PcdGet32 (PcdAcpiExposedTableVersions);
-
-  return;
-}
-
-/**
   Entry point of the ACPI table driver.
   Creates and initializes an instance of the ACPI Table
   Protocol and installs it on a new handle.
@@ -1119,9 +944,27 @@ InitializeAcpiSdtDxe (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS               Status;
+  EFI_STATUS  Status;
 
-  Status = EFI_SUCCESS;
+  Status = gBS->LocateProtocol (
+                  &gAcpiGetProtocolGuid,
+                  NULL,
+                  (VOID **)&mAcpiGetProtocol
+                  );
+  if (EFI_ERROR (Status) || (mAcpiGetProtocol == NULL)) {
+    return EFI_LOAD_ERROR;
+  }
+
+  mAcpiSdtProtocolTemplate.AcpiVersion = (EFI_ACPI_TABLE_VERSION)PcdGet32 (PcdAcpiExposedTableVersions);
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &mHandle,
+                  &gEfiAcpiSdtProtocolGuid,
+                  &mAcpiSdtProtocolTemplate,
+                  NULL
+                  );
+
+  ASSERT_EFI_ERROR (Status);
 
   return Status;
 }

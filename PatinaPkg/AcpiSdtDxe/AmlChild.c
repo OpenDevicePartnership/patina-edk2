@@ -6,7 +6,7 @@
 
 **/
 
-#include "AcpiTable.h"
+#include "AcpiSdt.h"
 
 /**
   Return the child objects buffer from AML Handle's buffer.
