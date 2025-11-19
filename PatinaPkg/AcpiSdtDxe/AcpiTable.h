@@ -212,20 +212,6 @@ AcpiPlatformChecksum (
   );
 
 /**
-  This function invokes ACPI notification.
-
-  @param[in]  AcpiTableInstance          Instance to AcpiTable
-  @param[in]  Version                    Version(s) to set.
-  @param[in]  Handle                     Handle of the table.
-**/
-VOID
-SdtNotifyAcpiList (
-  IN EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance,
-  IN EFI_ACPI_TABLE_VERSION   Version,
-  IN UINTN                    Handle
-  );
-
-/**
   This function initializes AcpiSdt protocol in ACPI table instance.
 
   @param[in]  AcpiTableInstance       Instance to construct

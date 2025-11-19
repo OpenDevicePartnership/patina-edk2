@@ -253,19 +253,6 @@ InstallAcpiTable (
 
   FreePool (AcpiTableBufferConst);
 
-  //
-  // Add a new table successfully, notify registed callback
-  //
-  if (FeaturePcdGet (PcdInstallAcpiSdtProtocol)) {
-    if (!EFI_ERROR (Status)) {
-      SdtNotifyAcpiList (
-        AcpiTableInstance,
-        Version,
-        *TableKey
-        );
-    }
-  }
-
   return Status;
 }
 
