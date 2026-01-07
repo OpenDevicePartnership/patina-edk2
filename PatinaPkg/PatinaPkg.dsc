@@ -21,6 +21,9 @@
 [Components.X64]
   PatinaPkg/MpDxe/MpDxe.inf
 
+[Components]
+  PatinaPkg/AcpiSdtDxe/AcpiSdtDxe.inf
+
 [LibraryClasses]
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
