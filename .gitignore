@@ -1,11 +1,11 @@
 __pycache__/
+.edkCode/
 .git_credentials
 *_extdep/
 *.bak
 *.pyc
 *.vcxproj.user
 /**/AutoGen/**
-/**/Include/Generated/**
 /Build/
 /Conf/
 /target
