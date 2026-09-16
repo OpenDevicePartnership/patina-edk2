@@ -33,3 +33,9 @@
   ## Patina Event generated for caching attributes changes.
   #
   gCacheAttributesChangeEventGuid = { 0xB8E477C7, 0x26A9, 0x4B9A, { 0xA7, 0xC9, 0x5F, 0x8F, 0x1F, 0x3D, 0x9C, 0x7B } }
+
+[Protocols]
+  ## Provides services for creating and removing aliased memory mappings.
+  #  Include/Protocol/AliasedMemoryMapping.h
+  #
+  gAliasedMemoryMappingProtocolGuid = { 0xCD7B3711, 0x3CE3, 0x456D, { 0xB6, 0xE9, 0x74, 0x36, 0x4F, 0x0B, 0xA3, 0x44 } }
